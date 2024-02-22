@@ -11,12 +11,33 @@ option = st.selectbox("Select data to view",
 
 st.subheader(f"{option} for the next {days} days in {place}")
 
-data = get_data(place, days, option)
+if place:
+    try:
+        filtered_data = get_data(place, days)
 
-d, t = get_data(days)
 
-figure = px.line(x=d, y=t, labels={
-    "x": "Date",
-    "y": "Temperature (C)"})
+        if option == "Temperature":
+            temperatures = [dict["main"]["temp"] / 10 for dict in filtered_data]
+            dates = [dict["dt_txt"] for dict in filtered_data]
+            figure = px.line(x=dates, y=temperatures, labels={
+                "x": "Date",
+                "y": "Temperature (C)"})
+            st.plotly_chart(figure)
 
-st.plotly_chart()
+        if option == "Sky":
+            images = {
+                "Clear": "images/clear.png",
+                "Clouds": "images/cloud.png",
+                "Rain": "images/rain.png",
+                "Snow": "images/snow.png"
+            }
+            sky_conditions = [dict["weather"][0]["main"] for dict in filtered_data]
+            temperatures = [dict["main"]["temp"] / 10 for dict in filtered_data]
+            dates = [dict["dt_txt"] for dict in filtered_data]
+
+            for condition, temp, date in zip(sky_conditions, temperatures, dates):
+                image_path = images[condition]
+                st.image(image_path, width=115)
+                st.write(f"Date: {date}, Temperature: {temp}°C")
+    except KeyError:
+        st.warning("That city doesn't exist")
